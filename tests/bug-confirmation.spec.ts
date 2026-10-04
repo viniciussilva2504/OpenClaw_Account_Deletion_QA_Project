@@ -14,18 +14,15 @@ test('AD-FIXTURE - confirms the observed failure pattern', async ({ page }) => {
   const input = page.locator('#email');
   await input.fill('qa-test@example.com');
 
-  let clicked = false;
   await page.locator('#confirm').evaluate((button) => {
     button.addEventListener('click', () => {
-      // Deliberately local instrumentation: the fixture does not implement the workflow.
+      button.setAttribute('data-click-observed', 'true');
     });
   });
 
   await page.locator('#confirm').click();
   await page.waitForTimeout(200);
 
+  await expect(page.locator('#confirm')).toHaveAttribute('data-click-observed', 'true');
   await expect(page.locator('#delete-modal')).toBeVisible();
-  clicked = true;
-
-  expect(clicked).toBe(true);
 });

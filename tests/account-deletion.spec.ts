@@ -3,15 +3,16 @@ import { test, expect } from '@playwright/test';
 /**
  * Safe black-box reproduction.
  *
- * The test blocks non-GET requests after the delete dialog is opened so the
- * real account cannot be deleted. It records whether clicking the final
- * confirmation produces a same-origin state-changing request.
+ * Opt-in black-box probe. After the valid confirmation is ready, it aborts
+ * every HTTP request (all methods and origins) before it can reach a server.
+ * This observes request intent only; it cannot establish successful deletion.
  */
 test('AD-06 - valid email should initiate the account deletion workflow', async ({ page }) => {
+  test.skip(process.env.RUN_LIVE_PROBE !== 'true', 'Set RUN_LIVE_PROBE=true to opt in to the guarded live probe.');
   test.skip(!process.env.AUTH_STATE, 'Set AUTH_STATE to an authenticated Playwright storage state.');
   test.skip(!process.env.TEST_ACCOUNT_EMAIL, 'Set TEST_ACCOUNT_EMAIL to the authenticated test account email.');
 
-  const attemptedWrites: Array<{ method: string; url: string }> = [];
+  const attemptedRequests: Array<{ method: string; url: string }> = [];
 
   await page.goto('/pt/dashboard', { waitUntil: 'domcontentloaded' });
 
@@ -24,21 +25,14 @@ test('AD-06 - valid email should initiate the account deletion workflow', async 
   await expect(inputs).toHaveCount(1);
   await inputs.fill(process.env.TEST_ACCOUNT_EMAIL!);
 
-  // Only block writes after the form is ready. This makes the test safe to
-  // run against a real authenticated account.
+  // Fail closed after the confirmation value is entered. Blocking every
+  // HTTP method and destination also catches APIs that use GET or another
+  // origin. The config blocks service workers so page routing can observe
+  // requests initiated by the page.
   await page.route('**/*', async (route) => {
     const request = route.request();
-    const url = request.url();
-    const isSameOrigin = url.startsWith(new URL(page.url()).origin);
-    const method = request.method().toUpperCase();
-
-    if (isSameOrigin && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
-      attemptedWrites.push({ method, url });
-      await route.abort();
-      return;
-    }
-
-    await route.continue();
+    attemptedRequests.push({ method: request.method(), url: request.url() });
+    await route.abort();
   });
 
   const finalDeleteButton = page.getByRole('button', { name: /^Delete Account$/ }).last();
@@ -48,7 +42,7 @@ test('AD-06 - valid email should initiate the account deletion workflow', async 
   await page.waitForTimeout(1500);
 
   expect(
-    attemptedWrites.length,
-    `No same-origin state-changing request was observed after clicking Delete Account.\nObserved requests: ${JSON.stringify(attemptedWrites, null, 2)}`,
+    attemptedRequests.length,
+    `No HTTP request was observed after clicking Delete Account.\nObserved requests: ${JSON.stringify(attemptedRequests, null, 2)}`,
   ).toBeGreaterThan(0);
 });

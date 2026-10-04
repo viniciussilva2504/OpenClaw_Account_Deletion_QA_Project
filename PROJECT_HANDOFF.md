@@ -49,9 +49,9 @@ Functional defect / Account lifecycle / Account management
 
 The valid confirmation should initiate the account-deletion workflow and produce an explicit completion state such as successful deletion, sign-out, redirect, or a clear actionable error.
 
-### Actual result
+### Actual result in the recording
 
-In the recorded session, the final confirmation click did not produce a visible completion state. The dialog remained open and the account was not taken through a successful deletion flow.
+In the recorded session, the final confirmation click did not produce a visible completion state and the dialog remained open. The recording does not establish whether the request was sent, rejected, delayed, or whether the server-side account state changed.
 
 ### User impact
 
@@ -101,21 +101,21 @@ This is an observation only. The root cause is not established. Further investig
 
 ## 5. Automated QA approach
 
-The repository contains a Playwright test that is intentionally safe for a real authenticated account.
+The primary automated coverage is a Python Playwright suite against a local contract harness. The deletion request is intercepted and fulfilled by a mock; it never targets OpenClaw. It demonstrates the designed flow and assertions, not production reproduction.
 
 The strategy is:
 
 - navigate to the account page;
 - open the deletion dialog;
 - enter the valid account email;
-- intercept same-origin non-GET requests immediately before the destructive action;
+- opt in explicitly to the live diagnostic probe, then intercept all HTTP requests after confirmation is ready;
 - click Delete Account;
-- record any state-changing request attempt;
-- abort the request so the real account cannot be deleted.
+- record any observed HTTP request attempt;
+- abort the request before it reaches its destination.
 
-A healthy implementation should attempt a state-changing operation. The reported failure is detected when no such request is initiated after the final click.
+A request attempt does not prove that deletion succeeded, and the probe's broad request observation can include unrelated traffic. It is diagnostic only and should not be used as deletion regression coverage. The evidence does not establish the root cause.
 
-A deterministic local fixture is also included so the testing logic can be demonstrated without touching production.
+The local harness covers valid/invalid confirmation, cancellation, mocked API failure/retry, and basic keyboard/focus behavior without touching production.
 
 ---
 

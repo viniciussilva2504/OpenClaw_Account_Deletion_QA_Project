@@ -1,7 +1,17 @@
-# Automated test
+# Automated tests
 
-`account-deletion.spec.ts` is a black-box safety test for the final confirmation step.
+## Python local contract tests
 
-It does **not** delete the account. It intercepts same-origin non-GET requests and aborts them after recording that the application attempted a state-changing operation.
+`test_account_deletion.py` uses Playwright for Python against `fixtures/account-delete-flow.html`, a local test harness. Every `/api/account/delete` request is intercepted and fulfilled by the test. These tests do not access OpenClaw and do not prove production behavior.
 
-A healthy implementation should attempt such an operation after the correct email is supplied. The reported failure is detected when no such request is initiated after the final click.
+Run with:
+
+```bash
+python -m pytest -q tests/test_account_deletion.py
+```
+
+## Optional TypeScript live diagnostic
+
+`account-deletion.spec.ts` is explicitly opt-in with `RUN_LIVE_PROBE=true` plus an authenticated Playwright state and account email. It aborts all HTTP requests after confirmation is entered. It only observes request attempts and is not a deletion regression test or proof of successful deletion. Never use real-account execution as a destructive test.
+
+`bug-confirmation.spec.ts` checks the click and persistent modal in an inert local fixture; it is a failure-pattern demonstration, not coverage of the product implementation.

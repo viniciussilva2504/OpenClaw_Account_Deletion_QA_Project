@@ -1,8 +1,8 @@
 # OpenClaw / ClawBro Account Deletion – QA Reproduction
 
-A small, evidence-driven QA project documenting and reproducing a user-facing defect observed in the account deletion flow shown in the attached recording.
+A portfolio-ready QA case study documenting a reported account-deletion failure, challenging the available evidence, and building safe, reproducible browser coverage.
 
-> **Important:** this repository does not claim to identify the server-side root cause. It documents a black-box failure: after entering the correct account email in the deletion confirmation dialog, clicking **Delete Account** produced no observable transition in the recorded session.
+> **Evidence limit:** the recording shows no visible completion state after the final interaction in that session. It does not establish whether the request reached the server or what happened to the account. Root cause remains unknown.
 
 ## Bug at a glance
 
@@ -26,39 +26,31 @@ A small, evidence-driven QA project documenting and reproducing a user-facing de
 
 A valid confirmation should submit the deletion request and the UI should transition to the documented success state, such as account deletion confirmation, sign-out, redirect, or another explicit completion state.
 
-### Actual
+### Actual in the supplied recording
 
-The confirmation action does not complete in the recorded session. The modal remains open and there is no visible success/redirect state.
+The modal remains visible and there is no captured success/redirect state. This is an observation from one recording, not independent reproduction or proof of server-side account state.
 
-## Automated reproduction
+## Automated coverage and safety
 
-The Playwright test in `tests/account-deletion.spec.ts` is designed to be **safe to execute against a real authenticated account**: it blocks non-GET requests after the confirmation dialog is ready, so the account cannot actually be deleted. The test observes whether clicking the final button attempts to initiate a same-origin state-changing request.
+The primary automated suite is Python + Playwright against a local HTML contract harness. The deletion endpoint is fulfilled by a request mock; no OpenClaw account, service, or credential is used. This proves the harness and assertions work, not that the production defect has been reproduced.
 
-A healthy implementation should attempt a state-changing request or navigation. The recorded failure is consistent with the absence of an observable deletion transition after the final click.
+The TypeScript live probe is opt-in (`RUN_LIVE_PROBE=true`) and aborts every HTTP request after the confirmation value is entered. It observes request intent only and is not proof of successful deletion. Do not provide credentials to an assistant or commit authentication state.
 
-### Setup
+### Run local Python browser tests
 
 ```bash
-npm install
-npx playwright install chromium
+python -m pip install -r requirements-test.txt
+python -m playwright install chromium
+python -m pytest -q tests/test_account_deletion.py
 ```
 
-Create a local authenticated Playwright storage state. Do not commit it:
+### Optional TypeScript suite
 
 ```bash
-npx playwright codegen --save-storage=auth/session.json https://clawbro.ai/pt/dashboard
-```
-
-Log in during the Codegen session, close the browser, then run:
-
-```bash
-TEST_ACCOUNT_EMAIL="your-test-email@example.com" \
-BASE_URL="https://clawbro.ai" \
-AUTH_STATE="auth/session.json" \
 npm test
 ```
 
-The test intentionally intercepts non-GET requests immediately before the destructive action and aborts them after recording the attempt. This prevents accidental deletion of the test account.
+The live probe stays skipped unless explicitly opted in and supplied with an authenticated storage state and email. Do not run it against a real account as a deletion regression test.
 
 ## Evidence
 
@@ -74,12 +66,14 @@ The public-safe evidence copy has the account email blurred. The original record
 
 OpenClaw's current security/reporting guidance says that ClawHub issues belong in `openclaw/clawhub`, and that `security@openclaw.ai` can route reports when the correct destination is unclear. The ClawHub security policy also treats website/API/authentication issues as platform-level reports. See the sources listed in `docs/sources.md`.
 
-## QA scope
+## QA case study artifacts
 
-The repository also contains:
+See the case-study documents:
 
-- `docs/bug-report.md` – structured report with expected/actual behavior and impact.
-- `docs/test-plan.md` – recommended positive, negative, regression, and failure-path coverage.
+- `docs/QA_STRATEGY.md` – prioritized, risk-based coverage strategy.
+- `docs/TEST_PLAN.md` – cases, preconditions, run instructions, and limits.
+- `docs/BUG_REPORT.md` – evidence-based report with alternative explanations and missing evidence.
+- `docs/INVESTIGATION_LOG.md` – investigation history, changes, and remaining risks.
 - `docs/technical-observations.md` – evidence-based observations from the recording, without claiming an unverified root cause.
 - `docs/outreach-email.md` – professional outreach message to the product/engineering team.
 - `docs/professional-context.md` – concise profile context for presenting the author as a QA/full-stack candidate.
