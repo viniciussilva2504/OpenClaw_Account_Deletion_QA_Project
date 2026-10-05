@@ -1,5 +1,8 @@
 # Evidence
 
-The public-safe evidence in this directory is redacted to remove the account email visible in the original recording.
+The public preview assets are derived from the redacted recording:
 
-**Do not add the original `Open_Claw_Accont_Delete_Bug.mp4` to a public repository.**
+- `account-deletion-reproduction-redacted.mp4` — full redacted recording.
+- `account-deletion-preview.gif` — short animated preview generated from the redacted recording for the README.
+
+The original `Open_Claw_Accont_Delete_Bug.mp4` is not present in this checkout. The GIF does not replace the original recording.

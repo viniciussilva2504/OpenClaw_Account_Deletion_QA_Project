@@ -1,5 +1,9 @@
 # OpenClaw / ClawBro Account Deletion – QA Reproduction
 
+![Animated preview of the account deletion flow](evidence/account-deletion-preview.gif)
+
+*Redacted preview from the supplied reproduction recording.* [Watch the full redacted video](evidence/account-deletion-reproduction-redacted.mp4).
+
 A portfolio-ready QA case study documenting a reported account-deletion failure, challenging the available evidence, and building safe, reproducible browser coverage.
 
 > **Evidence limit:** the recording shows no visible completion state after the final interaction in that session. It does not establish whether the request reached the server or what happened to the account. Root cause remains unknown.
